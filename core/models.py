@@ -1,23 +1,30 @@
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.auth.models import User
 from django.utils import timezone
 
 
-class WorkFlowModel(models.Model):
+class WorkFlow(models.Model):
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.name
 
-class StepModel(models.Model):
+
+class Step(models.Model):
     name = models.CharField(max_length=255)
-    user_owner = models.CharField(max_length=255)
+    user_owner = models.ForeignKey(User, on_delete=models.CASCADE)
     step_number = models.PositiveIntegerField(default=0)
-    work_flow = models.ForeignKey(WorkFlowModel, on_delete=models.CASCADE),
+    workflow = models.ForeignKey(WorkFlow, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.workflow} - Step {self.step_number}"
 
 
 class HistoryTrackingMixin(models.Model):
@@ -56,7 +63,7 @@ class HistoryTrackingMixin(models.Model):
         abstract = True
 
 
-class RequestModel(HistoryTrackingMixin, models.Model):
+class Requests(HistoryTrackingMixin, models.Model):
 
     REQUEST_STATUS_PENDING = 'pending'
     REQUEST_STATUS_NEXT = 'next'
@@ -74,20 +81,23 @@ class RequestModel(HistoryTrackingMixin, models.Model):
 
     name = models.CharField(max_length=255)
     desc = models.TextField()
-    work_flow = models.ForeignKey(WorkFlowModel, on_delete=models.CASCADE)
-    step = models.ForeignKey(StepModel, on_delete=models.CASCADE)
+    workflow = models.ForeignKey(WorkFlow, on_delete=models.CASCADE)
+    step = models.ForeignKey(Step, on_delete=models.CASCADE)
     status = models.CharField(choices=REQUEST_STATUS,
                               default=REQUEST_STATUS_PENDING)
-    user = models.CharField(max_length=255)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     reason = models.CharField(max_length=255, null=True)
-    request_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey()
+    content_object = GenericForeignKey('content_type', 'object_id')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.name
 
-class RequestHistoryModel(models.Model):
+
+class RequestsHistory(models.Model):
     REQUEST_STATUS_PENDING = 'pending'
     REQUEST_STATUS_NEXT = 'next'
     REQUEST_STATUS_REJECT = 'reject'
@@ -104,16 +114,19 @@ class RequestHistoryModel(models.Model):
 
     name = models.CharField(max_length=255)
     desc = models.TextField()
-    work_flow = models.ForeignKey(WorkFlowModel, on_delete=models.CASCADE)
-    step = models.ForeignKey(StepModel, on_delete=models.CASCADE)
+    workflow = models.ForeignKey(WorkFlow, on_delete=models.CASCADE)
+    step = models.ForeignKey(Step, on_delete=models.CASCADE)
     status = models.CharField(choices=REQUEST_STATUS,
                               default=REQUEST_STATUS_PENDING)
-    user = models.CharField(max_length=255)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     reason = models.CharField(max_length=255, null=True)
-    request_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey()
+    content_object = GenericForeignKey('content_type', 'object_id')
     timestamp = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         ordering = ['-timestamp']
