@@ -37,12 +37,16 @@ class PartialUpdateField(serializers.Field):
         return data
 
 
-class LeaveUpdateSerializer(serializers.ModelSerializer):
-    status = PartialUpdateField()
+def validate_date_range(data):
+    """
+        Custom validation to ensure start_date is less than end_date.
+    """
+    start_date = data.get('start_date')
+    end_date = data.get('end_date')
 
-    class Meta:
-        model = Leave
-        fields = ['status']
+    if start_date and end_date and start_date >= end_date:
+        raise serializers.ValidationError(
+            "Start date must be less than end date.")
 
 
 class LeaveCreateSerializer(serializers.ModelSerializer):
@@ -51,13 +55,27 @@ class LeaveCreateSerializer(serializers.ModelSerializer):
         fields = ['reason', 'start_date', 'end_date', 'user']
 
     def validate(self, data):
-        """
-           Custom validation to ensure start_date is less than end_date.
-        """
-        start_date = data.get('start_date')
-        end_date = data.get('end_date')
+        validate_date_range(data)
+        return data
 
-        if start_date and end_date and start_date >= end_date:
-            return serializers.ValidationError("Start Date must be less than End Date.")
 
+class LeaveUpdateStatusSerializer(serializers.ModelSerializer):
+    status = PartialUpdateField()
+
+    class Meta:
+        model = Leave
+        fields = ['status']
+
+
+class LeaveUpdateSerializer(serializers.ModelSerializer):
+    reason = PartialUpdateField()
+    start_date = PartialUpdateField()
+    end_date = PartialUpdateField()
+
+    class Meta:
+        model = Leave
+        fields = ['reason', 'start_date', 'end_date']
+
+    def validate(self, data):
+        validate_date_range(data)
         return data

@@ -25,8 +25,7 @@ def get_workflow(request, pk):
 def create_workflow(request):
     serializer = WorkflowSerializer(data=request.data)
 
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer.is_valid(raise_exception=True)
 
     serializer.save()
     return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -48,8 +47,7 @@ def create_step(request):
 
     step_serializer = StepSerializer(data=step_data)
 
-    if not step_serializer.is_valid():
-        return Response(step_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    step_serializer.is_valid(raise_exception=True)
 
     step_serializer.save()
     return Response(step_serializer.data,
