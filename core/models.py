@@ -19,7 +19,8 @@ class Step(models.Model):
     name = models.CharField(max_length=255)
     user_owner = models.ForeignKey(User, on_delete=models.CASCADE)
     step_number = models.PositiveIntegerField(default=0)
-    workflow = models.ForeignKey(WorkFlow, on_delete=models.CASCADE)
+    workflow = models.ForeignKey(
+        WorkFlow, on_delete=models.CASCADE, related_name='step_set')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
