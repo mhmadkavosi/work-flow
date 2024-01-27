@@ -16,15 +16,15 @@ def get_leaves(request):
 
 
 @api_view(["GET"])
-def get_leaves_info(request, id):
-    leaves = get_object_or_404(Leave, id)
+def get_leaves_info(request, pk):
+    leaves = get_object_or_404(Leave, pk=pk)
     serializer = LeaveSerializer(leaves)
     return Response(serializer.data)
 
 
 @api_view(["POST"])
 def create_leaves(request):
-    serializer = LeaveCreateSerializer(request.data)
+    serializer = LeaveCreateSerializer(data=request.data)
 
     serializer.is_valid(raise_exception=True)
     serializer.save()
