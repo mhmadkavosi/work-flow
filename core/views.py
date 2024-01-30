@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .models import WorkFlow, Step, Requests
-from .serializer import WorkflowSerializer, StepSerializer, RequestCreateSerializer, RequestUpdateStatusSerializer
+from .serializer import WorkflowSerializer, StepSerializer, RequestCreateSerializer, RequestUpdateStatusSerializer, RequestSerializer
 from vacation.models import Leave
 from vacation.serializer import LeaveUpdateStatusSerializer
 
@@ -65,31 +65,32 @@ def create_request(request):
         workflow=workflow).order_by('step_number').first()
 
     request_data = {'workflow': workflow_id,
-                    'step': first_step.id, 'user': first_step.user, **request.data}
+                    'step': first_step.id, 'user': first_step.user_owner, **request.data}
 
     request_serializer = RequestCreateSerializer(data=request_data)
 
     request_serializer.is_valid(raise_exception=True)
 
     request_serializer.save()
+
     return Response(request_serializer.data,
                     status=status.HTTP_201_CREATED)
 
 
 @api_view(["PUT"])
-def update_request_status(request):
-    request = get_object_or_404(Requests, id=request.data.get("request_id"))
+def update_request_status(requests):
+    request = get_object_or_404(Requests, id=requests.data.get("request_id"))
     if (request.status == Requests.REQUEST_STATUS_REJECT or request.status == Requests.REQUEST_STATUS_ACCEPT):
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_200_OK, data={"status": request.status})
 
     current_step = get_object_or_404(Step, id=request.step_id)
 
     next_step = Step.objects.filter(
-        workflow=request.workflow_id, step_number=current_step.step_number + 1)
+        workflow=request.workflow_id, step_number=current_step.step_number + 1).first()
 
     if next_step:
         request_update_data = {"step": next_step.id,
-                               "status": Requests.REQUEST_STATUS_NEXT, "user": next_step.user_owner_id}
+                               "status": Requests.REQUEST_STATUS_NEXT, "user": next_step.user_owner_id, "reason": requests.data.get("reason")}
         serializer = RequestUpdateStatusSerializer(
             request, data=request_update_data, partial=True)
 
@@ -101,7 +102,7 @@ def update_request_status(request):
         leave = get_object_or_404(Leave, id=request.leave_id)
         leave_serializer = LeaveUpdateStatusSerializer(
             leave, data={
-                "status": Requests.REQUEST_STATUS_ACCEPT}, partial=True)
+                "status": Requests.REQUEST_STATUS_ACCEPT, "reason": requests.data.get("reason")}, partial=True)
 
         leave_serializer.is_valid(raise_exception=True)
         leave_serializer.save()
@@ -121,13 +122,13 @@ def update_request_status(request):
 def reject_request_status(request):
     request = get_object_or_404(Requests, id=request.data.get("request_id"))
     if (request.status == Requests.REQUEST_STATUS_REJECT or request.status == Requests.REQUEST_STATUS_ACCEPT):
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_200_OK, data={"status": request.status})
 
     # update status of vacation to reject
     leave = get_object_or_404(Leave, id=request.leave_id)
     leave_serializer = LeaveUpdateStatusSerializer(
         leave, data={
-            "status": Leave.REQUEST_STATUS_REJECT}, partial=True)
+            "status": Leave.REQUEST_STATUS_REJECT, "reason": request.data.get("reason")}, partial=True)
 
     leave_serializer.is_valid(raise_exception=True)
     leave_serializer.save()
@@ -143,5 +144,8 @@ def reject_request_status(request):
     return Response(serializer.data)
 
 
-# rollback request
-# save history
+@api_view(["GET"])
+def get_all_request(request):
+    requests = Requests.objects.all()
+    serializer = RequestSerializer(requests, many=True)
+    return Response(serializer.data)

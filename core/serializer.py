@@ -1,5 +1,14 @@
 from rest_framework import serializers
 from .models import WorkFlow, Step, Requests
+from vacation.serializer import LeaveSerializer
+from django.contrib.auth.models import User
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email',
+                  'first_name', 'last_name']
 
 
 class StepSerializer(serializers.ModelSerializer):
@@ -14,6 +23,18 @@ class WorkflowSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkFlow
         fields = "__all__"
+
+
+class RequestSerializer(serializers.ModelSerializer):
+    workflow = WorkflowSerializer()
+    step = StepSerializer()
+    leave = LeaveSerializer()
+    user = UserSerializer()
+
+    class Meta:
+        model = Requests
+        fields = ["id", "name", "desc", "workflow",
+                  "step", "user", "reason", "leave"]
 
 
 class RequestCreateSerializer(serializers.ModelSerializer):
@@ -47,4 +68,4 @@ class RequestUpdateStatusSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Requests
-        fields = ['status', 'step', 'user']
+        fields = ['id', 'status', 'step', 'user', 'reason']
