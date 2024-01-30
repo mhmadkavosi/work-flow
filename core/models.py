@@ -95,7 +95,8 @@ class Requests(models.Model):
 
     def save_history(self):
         RequestsHistory.objects.create(name=self.name, desc=self.desc, workflow=self.workflow,
-                                       step=self.step, status=self.status, user=self.user, reason=self.reason, leave=self.leave, request_id=self.id)
+                                       step=self.step, status=self.status, user=self.user, reason=self.reason,
+                                       leave=self.leave, request_id=self.id)
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

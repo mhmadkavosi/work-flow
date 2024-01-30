@@ -10,5 +10,6 @@ urlpatterns = [
     path("request/create/", views.create_request),
     path("request/update/", views.update_request_status),
     path("request/reject/", views.reject_request_status),
+    path("request/rollback/", views.rollback_request),
     path("request/", views.get_all_request)
 ]

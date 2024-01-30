@@ -149,3 +149,27 @@ def get_all_request(request):
     requests = Requests.objects.all()
     serializer = RequestSerializer(requests, many=True)
     return Response(serializer.data)
+
+
+@api_view(["PUT"])
+def rollback_request(requests):
+    request = get_object_or_404(Requests, id=requests.data.get("request_id"))
+    if (request.status == Requests.REQUEST_STATUS_REJECT or request.status == Requests.REQUEST_STATUS_ACCEPT):
+        return Response(status=status.HTTP_200_OK, data={"status": request.status})
+
+    current_step = get_object_or_404(Step, id=request.step_id)
+
+    last_step = Step.objects.filter(
+        workflow=request.workflow_id, step_number=current_step.step_number - 1).first()
+
+    if last_step:
+        request_update_data = {"step": last_step.id,
+                               "status": Requests.REQUEST_STATUS_NEXT, "user": last_step.user_owner_id, "reason": requests.data.get("reason")}
+        serializer = RequestUpdateStatusSerializer(
+            request, data=request_update_data, partial=True)
+
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
