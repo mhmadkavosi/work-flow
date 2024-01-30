@@ -32,18 +32,6 @@ def create_leaves(request):
 
 
 @api_view(["PUT"])
-def update_leave_status(request):
-    leave = get_object_or_404(Leave, id=request.data.get("leave_id"))
-    serializer = LeaveUpdateStatusSerializer(
-        leave, data=request.data, partial=True)
-
-    serializer.is_valid(raise_exception=True)
-
-    serializer.save()
-    return Response(serializer.data)
-
-
-@api_view(["PUT"])
 def update_leave_reason_date(request):
     leave = get_object_or_404(Leave, id=request.data.get("leave_id"))
 

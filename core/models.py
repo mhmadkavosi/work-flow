@@ -4,6 +4,8 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.auth.models import User
 from django.utils import timezone
 
+from vacation.models import Leave
+
 
 class WorkFlow(models.Model):
     name = models.CharField(max_length=255)
@@ -69,14 +71,12 @@ class Requests(HistoryTrackingMixin, models.Model):
     REQUEST_STATUS_PENDING = 'pending'
     REQUEST_STATUS_NEXT = 'next'
     REQUEST_STATUS_REJECT = 'reject'
-    REQUEST_STATUS_ROLLBACK = 'rollback'
     REQUEST_STATUS_ACCEPT = 'accept'
 
     REQUEST_STATUS = [
         (REQUEST_STATUS_PENDING, 'Pending'),
         (REQUEST_STATUS_NEXT, 'Next'),
         (REQUEST_STATUS_REJECT, 'Reject'),
-        (REQUEST_STATUS_ROLLBACK, 'Rollback'),
         (REQUEST_STATUS_ACCEPT, 'Accept')
     ]
 
@@ -88,9 +88,7 @@ class Requests(HistoryTrackingMixin, models.Model):
                               default=REQUEST_STATUS_PENDING)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     reason = models.CharField(max_length=255, null=True)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
+    leave = models.ForeignKey(Leave, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -98,18 +96,16 @@ class Requests(HistoryTrackingMixin, models.Model):
         return self.name
 
 
-class RequestsHistory(models.Model):
+class RequestsHistory(HistoryTrackingMixin, models.Model):
     REQUEST_STATUS_PENDING = 'pending'
     REQUEST_STATUS_NEXT = 'next'
     REQUEST_STATUS_REJECT = 'reject'
-    REQUEST_STATUS_ROLLBACK = 'rollback'
     REQUEST_STATUS_ACCEPT = 'accept'
 
     REQUEST_STATUS = [
         (REQUEST_STATUS_PENDING, 'Pending'),
         (REQUEST_STATUS_NEXT, 'Next'),
         (REQUEST_STATUS_REJECT, 'Reject'),
-        (REQUEST_STATUS_ROLLBACK, 'Rollback'),
         (REQUEST_STATUS_ACCEPT, 'Accept')
     ]
 
@@ -121,9 +117,9 @@ class RequestsHistory(models.Model):
                               default=REQUEST_STATUS_PENDING)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     reason = models.CharField(max_length=255, null=True)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
+    leave = models.ForeignKey(Leave, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     timestamp = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
